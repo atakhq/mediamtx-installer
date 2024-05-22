@@ -3,13 +3,45 @@
 # Dependencies required for the script
 REQUIRED_DEPENDENCIES=(curl tar jq)
 
-# Check if dependencies are installed
-for dep in "${REQUIRED_DEPENDENCIES[@]}"; do
-    if ! command -v "$dep" &> /dev/null; then
-        echo "$dep is not installed. Installing..."
-        sudo apt-get update && sudo apt-get install -y "$dep"
-    fi
-done
+# Function to install dependencies for Debian/Ubuntu
+install_deps_debian() {
+    for dep in "${REQUIRED_DEPENDENCIES[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            echo "$dep is not installed. Installing..."
+            sudo apt-get update && sudo apt-get install -y "$dep"
+        fi
+    done
+}
+
+# Function to install dependencies for RHEL/Rocky Linux
+install_deps_rhel() {
+    for dep in "${REQUIRED_DEPENDENCIES[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            echo "$dep is not installed. Installing..."
+            sudo yum install -y "$dep"
+        fi
+    done
+}
+
+# Determine the OS and install dependencies
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    case "$ID" in
+        ubuntu|debian)
+            install_deps_debian
+            ;;
+        rhel|rocky|centos)
+            install_deps_rhel
+            ;;
+        *)
+            echo "Unsupported distribution: $ID"
+            exit 1
+            ;;
+    esac
+else
+    echo "Cannot determine the OS. /etc/os-release not found."
+    exit 1
+fi
 
 # Define the GitHub repository
 REPO="bluenviron/mediamtx"
